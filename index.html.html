@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Mi Gestor Personal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Manrope', 'system-ui', 'sans-serif'] },
+        colors: {
+          brand: { DEFAULT: '#3D5A80', light: '#E8EEF4', dark: '#28415C' },
+          ok: '#2F855A',
+          bad: '#C0392B',
+          warn: '#D97706'
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html, body { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 9999px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  input, select { outline: none; }
+  input:focus, select:focus { box-shadow: 0 0 0 2px #3D5A80; border-color: transparent; }
+</style>
+</head>
+<body class="bg-[#F4F5F7] text-[#1B1F27] font-sans min-h-screen pb-28">
+
+<!-- HEADER -->
+<header class="safe-top sticky top-0 z-20 bg-[#F4F5F7]/90 backdrop-blur border-b border-gray-200 px-4 pt-4 pb-3">
+  <h1 class="text-lg font-extrabold tracking-tight" id="pageTitle">Finanzas</h1>
+  <p class="text-xs text-gray-500" id="pageSubtitle">Tus movimientos, todo en tu teléfono</p>
+</header>
+
+<main class="px-4 pt-4 max-w-md mx-auto">
+
+  <!-- ===================== FINANZAS ===================== -->
+  <section id="tab-finanzas" class="tab-panel active space-y-4">
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-bold text-gray-700">Esta semana</h2>
+        <span id="weekRangeLabel" class="text-[11px] text-gray-400"></span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p class="text-[11px] text-gray-400">Ingresos</p>
+          <p id="weekIngresos" class="text-sm font-bold text-ok">$0</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-400">Gastos</p>
+          <p id="weekGastos" class="text-sm font-bold text-bad">$0</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-400">Balance</p>
+          <p id="weekBalance" class="text-sm font-bold">$0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <button id="toggleFinForm" type="button" class="w-full flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-700">Nueva transacción</h2>
+        <span id="finFormChevron" class="text-gray-400 text-lg leading-none">+</span>
+      </button>
+      <form id="finForm" class="hidden mt-3 space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-gray-500">Fecha</label>
+            <input required type="date" id="finFecha" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-500">Tipo</label>
+            <select id="finTipo" class="w-full mt-1 rounded-lg border-gray-200 text-sm">
+              <option value="ingreso">Ingreso</option>
+              <option value="gasto" selected>Gasto</option>
+            </select>
+          </div>
+        </div>
+        <div id="finCategoriaIngresoWrap" class="hidden">
+          <label class="text-[11px] text-gray-500">Categoría</label>
+          <select id="finCategoriaIngreso" class="w-full mt-1 rounded-lg border-gray-200 text-sm">
+            <option value="Ventas">Ventas</option>
+            <option value="Talla">Talla</option>
+            <option value="Retalla">Retalla</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div id="finCategoriaGastoWrap">
+          <label class="text-[11px] text-gray-500">Categoría</label>
+          <input id="finCategoriaGasto" list="categoriasList" placeholder="Ej. Comida" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          <datalist id="categoriasList">
+            <option value="Comida"></option>
+            <option value="Transporte"></option>
+            <option value="Arriendo"></option>
+            <option value="Servicios"></option>
+            <option value="Salud"></option>
+            <option value="Entretenimiento"></option>
+            <option value="Otro"></option>
+          </datalist>
+        </div>
+        <div>
+          <label class="text-[11px] text-gray-500">Monto</label>
+          <input required type="number" step="0.01" min="0" id="finMonto" placeholder="0" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-gray-500">Cantidad de cts</label>
+            <input type="number" step="0.01" min="0" id="finCantidadCts" placeholder="0" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-500">Cantidad de piedras</label>
+            <input type="number" step="1" min="0" id="finCantidadPiedras" placeholder="0" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="text-[11px] text-gray-500">Descripción (opcional)</label>
+          <input id="finDescripcion" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-brand text-white font-semibold text-sm">Guardar</button>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold text-gray-700">Resumen mensual</h2>
+        <input type="month" id="finMonthPicker" class="text-sm rounded-lg border-gray-200" />
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center mb-4">
+        <div>
+          <p class="text-[11px] text-gray-400">Ingresos</p>
+          <p id="monthIngresos" class="text-sm font-bold text-ok">$0</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-400">Gastos</p>
+          <p id="monthGastos" class="text-sm font-bold text-bad">$0</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-400">Balance</p>
+          <p id="monthBalance" class="text-sm font-bold">$0</p>
+        </div>
+      </div>
+      <div class="h-44">
+        <canvas id="monthChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Gastos por categoría</h2>
+      <div class="h-48">
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <p id="noCategoryData" class="hidden text-xs text-gray-400 text-center py-6">Sin gastos registrados este mes</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Movimientos del mes</h2>
+      <div id="finList" class="space-y-1 max-h-80 overflow-y-auto"></div>
+      <p id="finEmpty" class="hidden text-xs text-gray-400 text-center py-4">No hay movimientos este mes</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-2">
+      <button id="finExportBtn" type="button" class="flex-1 py-2.5 rounded-xl bg-brand-light text-brand font-semibold text-sm">Exportar CSV</button>
+      <label class="flex-1">
+        <span class="block text-center py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm cursor-pointer">Importar CSV</span>
+        <input type="file" accept=".csv" id="finImportInput" class="hidden" />
+      </label>
+    </div>
+  </section>
+
+  <!-- ===================== INVENTARIO ===================== -->
+  <section id="tab-inventario" class="tab-panel space-y-4">
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Balance de inventario</h2>
+      <div class="grid grid-cols-2 gap-3 text-center">
+        <div>
+          <p class="text-[11px] text-gray-400">Valor disponible</p>
+          <p id="invTotalValor" class="text-lg font-extrabold text-brand">$0</p>
+          <p class="text-[10px] text-gray-400" id="invTotalItems">0 productos</p>
+        </div>
+        <div>
+          <p class="text-[11px] text-gray-400">Total vendido</p>
+          <p id="invTotalVendido" class="text-lg font-extrabold text-ok">$0</p>
+          <p class="text-[10px] text-gray-400" id="invTotalVendidoItems">0 productos vendidos</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <button id="toggleInvForm" type="button" class="w-full flex items-center justify-between">
+        <h2 class="text-sm font-bold text-gray-700">Nuevo producto</h2>
+        <span id="invFormChevron" class="text-gray-400 text-lg leading-none">+</span>
+      </button>
+      <form id="invForm" class="hidden mt-3 space-y-3">
+        <div>
+          <label class="text-[11px] text-gray-500">Nombre</label>
+          <input required id="invNombre" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-gray-500">Cantidad</label>
+            <input required type="number" min="0" id="invCantidad" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-500">Precio unitario</label>
+            <input required type="number" step="0.01" min="0" id="invPrecio" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="text-[11px] text-gray-500">Estado</label>
+          <select id="invEstado" class="w-full mt-1 rounded-lg border-gray-200 text-sm">
+            <option>Disponible</option>
+            <option>Bajo stock</option>
+            <option>Agotado</option>
+            <option>Vendido</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[11px] text-gray-500">Notas (opcional)</label>
+          <input id="invNotas" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-brand text-white font-semibold text-sm">Guardar</button>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Productos</h2>
+      <div id="invList" class="space-y-1 max-h-96 overflow-y-auto"></div>
+      <p id="invEmpty" class="hidden text-xs text-gray-400 text-center py-4">Aún no has agregado productos</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-2">
+      <button id="invExportBtn" type="button" class="flex-1 py-2.5 rounded-xl bg-brand-light text-brand font-semibold text-sm">Exportar CSV</button>
+      <label class="flex-1">
+        <span class="block text-center py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm cursor-pointer">Importar CSV</span>
+        <input type="file" accept=".csv" id="invImportInput" class="hidden" />
+      </label>
+    </div>
+  </section>
+
+  <!-- ===================== TAREAS ===================== -->
+  <section id="tab-tareas" class="tab-panel space-y-4">
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <form id="tarForm" class="space-y-3">
+        <div>
+          <label class="text-[11px] text-gray-500">Descripción</label>
+          <input required id="tarDescripcion" placeholder="¿Qué necesitas hacer?" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] text-gray-500">Prioridad</label>
+            <select id="tarPrioridad" class="w-full mt-1 rounded-lg border-gray-200 text-sm">
+              <option value="Alta">Alta</option>
+              <option value="Media" selected>Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-brand text-white font-semibold text-sm">Agregar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="flex gap-2" id="tarFiltros">
+      <button data-filter="todas" class="tar-filtro-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-brand text-white transition-colors">Todas</button>
+      <button data-filter="pendiente" class="tar-filtro-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-white text-gray-600 border border-gray-200 transition-colors">Pendientes</button>
+      <button data-filter="completada" class="tar-filtro-btn flex-1 py-2 rounded-xl text-xs font-semibold bg-white text-gray-600 border border-gray-200 transition-colors">Completadas</button>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div id="tarList" class="space-y-1"></div>
+      <p id="tarEmpty" class="hidden text-xs text-gray-400 text-center py-4">No hay tareas aquí</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-2">
+      <button id="tarExportBtn" type="button" class="flex-1 py-2.5 rounded-xl bg-brand-light text-brand font-semibold text-sm">Exportar CSV</button>
+      <label class="flex-1">
+        <span class="block text-center py-2.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm cursor-pointer">Importar CSV</span>
+        <input type="file" accept=".csv" id="tarImportInput" class="hidden" />
+      </label>
+    </div>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="safe-bottom fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-200">
+  <div class="max-w-md mx-auto grid grid-cols-3 relative px-1">
+    <div id="navIndicator" class="absolute top-1 bottom-1 left-1 w-[calc(33.333%-4px)] bg-brand-light rounded-xl transition-transform duration-300 ease-out"></div>
+    <button data-tab="finanzas" class="nav-btn relative z-10 flex flex-col items-center gap-0.5 py-2.5 text-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1"/><path d="M18 12a2 2 0 0 0 0 4h3v-4z"/></svg>
+      <span class="text-[11px] font-semibold">Finanzas</span>
+    </button>
+    <button data-tab="inventario" class="nav-btn relative z-10 flex flex-col items-center gap-0.5 py-2.5 text-gray-400">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+      <span class="text-[11px] font-semibold">Inventario</span>
+    </button>
+    <button data-tab="tareas" class="nav-btn relative z-10 flex flex-col items-center gap-0.5 py-2.5 text-gray-400">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="text-[11px] font-semibold">Tareas</span>
+    </button>
+  </div>
+</nav>
+
+<!-- IMPORT MODAL -->
+<div id="importModal" class="hidden fixed inset-0 z-40 bg-black/40 flex items-end sm:items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4">
+    <h3 class="font-bold text-base">Importar CSV</h3>
+    <p id="importModalText" class="text-sm text-gray-600"></p>
+    <div class="flex flex-col gap-2">
+      <button id="btnImportAppend" type="button" class="w-full py-2.5 rounded-xl bg-brand text-white font-semibold text-sm">Agregar a los existentes</button>
+      <button id="btnImportReplace" type="button" class="w-full py-2.5 rounded-xl bg-[#C0392B1A] text-bad font-semibold text-sm">Reemplazar todo</button>
+      <button id="btnImportCancel" type="button" class="w-full py-2 text-sm text-gray-500">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SELL MODAL -->
+<div id="sellModal" class="hidden fixed inset-0 z-40 bg-black/40 flex items-end sm:items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4">
+    <h3 class="font-bold text-base">Registrar venta</h3>
+    <p id="sellModalItemName" class="text-sm text-gray-600"></p>
+    <div>
+      <label class="text-[11px] text-gray-500">Cantidad a vender</label>
+      <input type="number" step="1" min="1" id="sellCantidad" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+    </div>
+    <div>
+      <label class="text-[11px] text-gray-500">Precio total de venta</label>
+      <input type="number" step="0.01" min="0" id="sellPrecioTotal" class="w-full mt-1 rounded-lg border-gray-200 text-sm" />
+    </div>
+    <div class="flex flex-col gap-2">
+      <button id="btnConfirmSell" type="button" class="w-full py-2.5 rounded-xl bg-brand text-white font-semibold text-sm">Confirmar venta (se agrega a Finanzas)</button>
+      <button id="btnCancelSell" type="button" class="w-full py-2 text-sm text-gray-500">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONSTANTES Y ALMACENAMIENTO
+   ============================================================ */
+const K_FIN = 'pg_finanzas_v1';
+const K_INV = 'pg_inventario_v1';
+const K_TAR = 'pg_tareas_v1';
+const K_TAB = 'pg_last_tab_v1';
+
+let finanzas = [];
+let inventario = [];
+let tareas = [];
+
+let editingFinId = null;
+let editingInvId = null;
+let currentTarFilter = 'todas';
+
+let finMonthChartInstance = null;
+let categoryChartInstance = null;
+let pendingImportCallback = null;
+let pendingSellItemId = null;
+
+/* ============================================================
+   HELPERS GENERALES
+   ============================================================ */
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function currentMonthStr() { return new Date().toISOString().slice(0, 7); }
+
+function formatMoney(n) {
+  const val = Number(n) || 0;
+  try {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+  } catch (e) {
+    return '$' + val.toFixed(0);
+  }
+}
+
+function escapeHTML(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function capitalize(s) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+function fmtShort(d) {
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' });
+}
+
+function updateCategoriaVisibility() {
+  const tipo = document.getElementById('finTipo').value;
+  const ingWrap = document.getElementById('finCategoriaIngresoWrap');
+  const gasWrap = document.getElementById('finCategoriaGastoWrap');
+  if (tipo === 'ingreso') {
+    ingWrap.classList.remove('hidden');
+    gasWrap.classList.add('hidden');
+  } else {
+    ingWrap.classList.add('hidden');
+    gasWrap.classList.remove('hidden');
+  }
+}
+
+function getCategoriaValue() {
+  const tipo = document.getElementById('finTipo').value;
+  if (tipo === 'ingreso') return document.getElementById('finCategoriaIngreso').value;
+  return document.getElementById('finCategoriaGasto').value.trim() || 'Otro';
+}
+
+function setCategoriaValue(tipo, categoria) {
+  if (tipo === 'ingreso') {
+    const sel = document.getElementById('finCategoriaIngreso');
+    const opts = Array.from(sel.options).map(o => o.value);
+    sel.value = opts.includes(categoria) ? categoria : 'Otros';
+  } else {
+    document.getElementById('finCategoriaGasto').value = categoria;
+  }
+}
+
+function getWeekBounds(refDate) {
+  const date = new Date(refDate);
+  const day = date.getDay(); // 0 domingo .. 6 sábado
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+}
+
+function loadArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+function saveFinanzas() { localStorage.setItem(K_FIN, JSON.stringify(finanzas)); }
+function saveInventario() { localStorage.setItem(K_INV, JSON.stringify(inventario)); }
+function saveTareas() { localStorage.setItem(K_TAR, JSON.stringify(tareas)); }
+
+/* ============================================================
+   CSV: PARSEO, ESCAPE, EXPORTAR, IMPORTAR
+   ============================================================ */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') { inQuotes = true; }
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += c; }
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
+}
+
+function csvEscape(val) {
+  const s = (val === undefined || val === null) ? '' : String(val);
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function toCSV(headers, rows) {
+  const lines = [headers.map(csvEscape).join(',')];
+  rows.forEach(r => lines.push(headers.map(h => csvEscape(r[h])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadCSV(filename, content) {
+  const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function openImportModal(count, cb) {
+  pendingImportCallback = cb;
+  document.getElementById('importModalText').textContent =
+    `Se encontraron ${count} registro(s) en el archivo. ¿Qué deseas hacer con tus datos actuales?`;
+  document.getElementById('importModal').classList.remove('hidden');
+}
+function closeImportModal() {
+  document.getElementById('importModal').classList.add('hidden');
+  pendingImportCallback = null;
+}
+
+function openSellModal(itemId) {
+  const item = inventario.find(x => x.id === itemId);
+  if (!item) return;
+  pendingSellItemId = itemId;
+  document.getElementById('sellModalItemName').textContent = `${item.nombre} — disponibles: ${item.cantidad} u.`;
+  document.getElementById('sellCantidad').value = item.cantidad;
+  document.getElementById('sellCantidad').max = item.cantidad;
+  document.getElementById('sellPrecioTotal').value = ((Number(item.cantidad) || 0) * (Number(item.precio) || 0)).toFixed(2);
+  document.getElementById('sellModal').classList.remove('hidden');
+}
+function closeSellModal() {
+  document.getElementById('sellModal').classList.add('hidden');
+  pendingSellItemId = null;
+}
+
+function readCSVFile(file, headerOptions, onParsed) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const rows = parseCSV(ev.target.result);
+      if (!rows.length) { alert('El archivo está vacío.'); return; }
+      const header = rows[0].map(h => h.trim().toLowerCase());
+      let matched = null;
+      for (const opt of headerOptions) {
+        const expected = opt.map(h => h.toLowerCase());
+        if (expected.length === header.length && expected.every((h, i) => h === header[i])) { matched = opt; break; }
+      }
+      if (!matched) {
+        const formatsText = headerOptions.map(o => o.join(', ')).join('\n— o —\n');
+        alert('Las columnas del CSV no coinciden con ningún formato esperado:\n' + formatsText);
+        return;
+      }
+      const dataRows = rows.slice(1).filter(r => r.some(c => c.trim() !== ''));
+      const objs = dataRows.map(r => {
+        const o = {};
+        matched.forEach((h, i) => { o[h.toLowerCase()] = (r[i] ?? '').trim(); });
+        return o;
+      });
+      openImportModal(objs.length, (mode) => onParsed(objs, mode));
+    } catch (err) {
+      alert('No se pudo leer el archivo CSV. Verifica el formato.');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+/* ============================================================
+   RENDER: FINANZAS
+   ============================================================ */
+function finItemHTML(t) {
+  const isIngreso = t.tipo === 'ingreso';
+  const extras = [];
+  if (t.cantidadCts) extras.push(`${t.cantidadCts} cts`);
+  if (t.cantidadPiedras) extras.push(`${t.cantidadPiedras} piedras`);
+  const extraText = extras.length ? ' · ' + extras.join(' · ') : '';
+  return `<div class="flex items-center justify-between gap-2 py-2 border-b border-gray-50 last:border-0">
+    <div class="min-w-0">
+      <p class="text-sm font-semibold truncate">${escapeHTML(t.categoria)}</p>
+      <p class="text-[11px] text-gray-400 truncate">${escapeHTML(t.fecha)}${extraText}${t.descripcion ? ' · ' + escapeHTML(t.descripcion) : ''}</p>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="text-sm font-bold ${isIngreso ? 'text-ok' : 'text-bad'}">${isIngreso ? '+' : '-'}${formatMoney(t.monto)}</span>
+      <button data-edit-fin="${t.id}" class="text-gray-300 hover:text-brand text-sm px-1">✎</button>
+      <button data-del-fin="${t.id}" class="text-gray-300 hover:text-bad text-lg leading-none px-1">×</button>
+    </div>
+  </div>`;
+}
+
+function renderFinanzas() {
+  const { start, end } = getWeekBounds(new Date());
+  document.getElementById('weekRangeLabel').textContent = `${fmtShort(start)} – ${fmtShort(end)}`;
+
+  let wIng = 0, wGas = 0;
+  finanzas.forEach(t => {
+    const d = new Date(t.fecha + 'T00:00:00');
+    if (d >= start && d <= end) {
+      if (t.tipo === 'ingreso') wIng += Number(t.monto) || 0; else wGas += Number(t.monto) || 0;
+    }
+  });
+  document.getElementById('weekIngresos').textContent = formatMoney(wIng);
+  document.getElementById('weekGastos').textContent = formatMoney(wGas);
+  const wBal = wIng - wGas;
+  const weekBalEl = document.getElementById('weekBalance');
+  weekBalEl.textContent = formatMoney(wBal);
+  weekBalEl.className = 'text-sm font-bold ' + (wBal >= 0 ? 'text-ok' : 'text-bad');
+
+  const monthVal = document.getElementById('finMonthPicker').value || currentMonthStr();
+  const monthTx = finanzas.filter(t => t.fecha && t.fecha.startsWith(monthVal));
+
+  let mIng = 0, mGas = 0;
+  const catTotals = {};
+  const parts = monthVal.split('-').map(Number);
+  const y = parts[0], m = parts[1];
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const numWeeks = Math.max(1, Math.ceil(daysInMonth / 7));
+  const ingPorSemana = new Array(numWeeks).fill(0);
+  const gasPorSemana = new Array(numWeeks).fill(0);
+
+  monthTx.forEach(t => {
+    const monto = Number(t.monto) || 0;
+    const dayNum = Number((t.fecha.split('-')[2] || '1'));
+    const wi = Math.min(Math.floor((dayNum - 1) / 7), numWeeks - 1);
+    if (t.tipo === 'ingreso') {
+      mIng += monto;
+      ingPorSemana[wi] += monto;
+    } else {
+      mGas += monto;
+      gasPorSemana[wi] += monto;
+      catTotals[t.categoria] = (catTotals[t.categoria] || 0) + monto;
+    }
+  });
+
+  document.getElementById('monthIngresos').textContent = formatMoney(mIng);
+  document.getElementById('monthGastos').textContent = formatMoney(mGas);
+  const mBal = mIng - mGas;
+  const monthBalEl = document.getElementById('monthBalance');
+  monthBalEl.textContent = formatMoney(mBal);
+  monthBalEl.className = 'text-sm font-bold ' + (mBal >= 0 ? 'text-ok' : 'text-bad');
+
+  const weekLabels = ingPorSemana.map((_, i) => `Sem ${i + 1}`);
+  if (finMonthChartInstance) finMonthChartInstance.destroy();
+  finMonthChartInstance = new Chart(document.getElementById('monthChart'), {
+    type: 'bar',
+    data: {
+      labels: weekLabels,
+      datasets: [
+        { label: 'Ingresos', data: ingPorSemana, backgroundColor: '#2F855A', borderRadius: 6, maxBarThickness: 28 },
+        { label: 'Gastos', data: gasPorSemana, backgroundColor: '#C0392B', borderRadius: 6, maxBarThickness: 28 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  const catLabels = Object.keys(catTotals);
+  const catCanvas = document.getElementById('categoryChart');
+  const noCatEl = document.getElementById('noCategoryData');
+  if (categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
+  if (catLabels.length === 0) {
+    catCanvas.classList.add('hidden');
+    noCatEl.classList.remove('hidden');
+  } else {
+    catCanvas.classList.remove('hidden');
+    noCatEl.classList.add('hidden');
+    const palette = ['#3D5A80', '#C0392B', '#D97706', '#2F855A', '#8E7CC3', '#4FB0C6', '#9C6644', '#6B7280'];
+    categoryChartInstance = new Chart(catCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{ data: catLabels.map(l => catTotals[l]), backgroundColor: catLabels.map((_, i) => palette[i % palette.length]), borderWidth: 0 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+      }
+    });
+  }
+
+  const sorted = [...monthTx].sort((a, b) => b.fecha.localeCompare(a.fecha) || String(b.id).localeCompare(String(a.id)));
+  const finList = document.getElementById('finList');
+  const finEmpty = document.getElementById('finEmpty');
+  if (sorted.length === 0) {
+    finList.innerHTML = '';
+    finEmpty.classList.remove('hidden');
+  } else {
+    finEmpty.classList.add('hidden');
+    finList.innerHTML = sorted.map(finItemHTML).join('');
+  }
+}
+
+/* ============================================================
+   RENDER: INVENTARIO
+   ============================================================ */
+function invItemHTML(it) {
+  const estadoColor = it.estado === 'Agotado' ? 'bg-[#C0392B1A] text-bad'
+    : it.estado === 'Bajo stock' ? 'bg-[#D976061A] text-warn'
+    : it.estado === 'Vendido' ? 'bg-[#8E7CC31A] text-[#8E7CC3]'
+    : 'bg-[#2F855A1A] text-ok';
+  const canSell = it.estado !== 'Vendido' && (Number(it.cantidad) || 0) > 0;
+  return `<div class="py-2 border-b border-gray-50 last:border-0">
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-sm font-semibold truncate min-w-0">${escapeHTML(it.nombre)}</p>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-[10px] font-bold px-2 py-1 rounded-full ${estadoColor}">${escapeHTML(it.estado)}</span>
+        <button data-edit-inv="${it.id}" class="text-gray-300 hover:text-brand text-sm px-1">✎</button>
+        <button data-del-inv="${it.id}" class="text-gray-300 hover:text-bad text-lg leading-none px-1">×</button>
+      </div>
+    </div>
+    <div class="flex items-center justify-between gap-2 mt-1">
+      <p class="text-[11px] text-gray-400 truncate min-w-0">${it.cantidad} u. × ${formatMoney(it.precio)}${it.notas ? ' · ' + escapeHTML(it.notas) : ''}</p>
+      ${canSell ? `<button data-sell-inv="${it.id}" class="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-brand-light text-brand">Vender</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderInventario() {
+  const disponibles = inventario.filter(it => it.estado !== 'Vendido');
+  const vendidosItems = inventario.filter(it => it.estado === 'Vendido');
+  const totalDisponible = disponibles.reduce((s, it) => s + (Number(it.cantidad) || 0) * (Number(it.precio) || 0), 0);
+  document.getElementById('invTotalValor').textContent = formatMoney(totalDisponible);
+  document.getElementById('invTotalItems').textContent = `${disponibles.length} producto${disponibles.length === 1 ? '' : 's'}`;
+
+  const totalVendidoDinero = finanzas
+    .filter(t => t.origen === 'inventario' && t.tipo === 'ingreso')
+    .reduce((s, t) => s + (Number(t.monto) || 0), 0);
+  document.getElementById('invTotalVendido').textContent = formatMoney(totalVendidoDinero);
+  document.getElementById('invTotalVendidoItems').textContent = `${vendidosItems.length} producto${vendidosItems.length === 1 ? '' : 's'} vendidos`;
+
+  const list = document.getElementById('invList');
+  const empty = document.getElementById('invEmpty');
+  if (inventario.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    list.innerHTML = inventario.map(invItemHTML).join('');
+  }
+}
+
+/* ============================================================
+   RENDER: TAREAS
+   ============================================================ */
+function tarItemHTML(t) {
+  const done = t.estado === 'Completada';
+  const prioColor = t.prioridad === 'Alta' ? 'bg-[#C0392B1A] text-bad'
+    : t.prioridad === 'Media' ? 'bg-[#D976061A] text-warn'
+    : 'bg-gray-100 text-gray-500';
+  return `<div class="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+    <button data-toggle-tar="${t.id}" class="w-5 h-5 rounded-md border flex items-center justify-center shrink-0 text-xs ${done ? 'bg-brand border-brand text-white' : 'border-gray-300 text-transparent'}">✓</button>
+    <div class="min-w-0 flex-1">
+      <p class="text-sm font-medium truncate ${done ? 'line-through text-gray-400' : ''}">${escapeHTML(t.descripcion)}</p>
+      <p class="text-[10px] text-gray-400">${escapeHTML(t.fecha)}</p>
+    </div>
+    <button data-cycle-prio="${t.id}" class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${prioColor}">${escapeHTML(t.prioridad)}</button>
+    <button data-del-tar="${t.id}" class="text-gray-300 hover:text-bad text-lg leading-none shrink-0 px-1">×</button>
+  </div>`;
+}
+
+function renderTareas() {
+  let list = [...tareas];
+  if (currentTarFilter === 'pendiente') list = list.filter(t => t.estado !== 'Completada');
+  else if (currentTarFilter === 'completada') list = list.filter(t => t.estado === 'Completada');
+
+  const prioRank = { Alta: 0, Media: 1, Baja: 2 };
+  list.sort((a, b) => {
+    const aDone = a.estado === 'Completada', bDone = b.estado === 'Completada';
+    if (aDone !== bDone) return aDone ? 1 : -1;
+    const rankDiff = (prioRank[a.prioridad] ?? 1) - (prioRank[b.prioridad] ?? 1);
+    if (rankDiff !== 0) return rankDiff;
+    return String(b.fecha).localeCompare(String(a.fecha));
+  });
+
+  const el = document.getElementById('tarList');
+  const empty = document.getElementById('tarEmpty');
+  if (list.length === 0) {
+    el.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    el.innerHTML = list.map(tarItemHTML).join('');
+  }
+}
+
+/* ============================================================
+   NAVEGACIÓN POR PESTAÑAS
+   ============================================================ */
+const TABS = ['finanzas', 'inventario', 'tareas'];
+const TAB_TITLES = {
+  finanzas: ['Finanzas', 'Tus movimientos, todo en tu teléfono'],
+  inventario: ['Inventario', 'Controla tus productos y su valor'],
+  tareas: ['Tareas', 'Organiza tus pendientes']
+};
+
+function showTab(name) {
+  if (!TABS.includes(name)) name = 'finanzas';
+  TABS.forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+  });
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    const active = b.dataset.tab === name;
+    b.classList.toggle('text-brand', active);
+    b.classList.toggle('text-gray-400', !active);
+  });
+  const idx = TABS.indexOf(name);
+  document.getElementById('navIndicator').style.transform = `translateX(${idx * 100}%)`;
+  document.getElementById('pageTitle').textContent = TAB_TITLES[name][0];
+  document.getElementById('pageSubtitle').textContent = TAB_TITLES[name][1];
+  localStorage.setItem(K_TAB, name);
+}
+
+/* ============================================================
+   LISTENERS
+   ============================================================ */
+function attachListeners() {
+  document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+  document.getElementById('toggleFinForm').addEventListener('click', () => {
+    const f = document.getElementById('finForm');
+    f.classList.toggle('hidden');
+    document.getElementById('finFormChevron').textContent = f.classList.contains('hidden') ? '+' : '–';
+  });
+  document.getElementById('toggleInvForm').addEventListener('click', () => {
+    const f = document.getElementById('invForm');
+    f.classList.toggle('hidden');
+    document.getElementById('invFormChevron').textContent = f.classList.contains('hidden') ? '+' : '–';
+  });
+
+  document.getElementById('finMonthPicker').addEventListener('change', renderFinanzas);
+  document.getElementById('finTipo').addEventListener('change', updateCategoriaVisibility);
+
+  /* --- Formulario Finanzas --- */
+  document.getElementById('finForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const fecha = document.getElementById('finFecha').value || todayISO();
+    const tipo = document.getElementById('finTipo').value;
+    const categoria = getCategoriaValue();
+    const monto = parseFloat(document.getElementById('finMonto').value) || 0;
+    const descripcion = document.getElementById('finDescripcion').value.trim();
+    const cantidadCts = parseFloat(document.getElementById('finCantidadCts').value) || 0;
+    const cantidadPiedras = parseFloat(document.getElementById('finCantidadPiedras').value) || 0;
+
+    if (editingFinId) {
+      const item = finanzas.find(x => x.id === editingFinId);
+      if (item) Object.assign(item, { fecha, tipo, categoria, monto, descripcion, cantidadCts, cantidadPiedras });
+      editingFinId = null;
+      this.querySelector('button[type=submit]').textContent = 'Guardar';
+    } else {
+      finanzas.push({ id: uid(), fecha, tipo, categoria, monto, descripcion, cantidadCts, cantidadPiedras });
+    }
+    saveFinanzas();
+    this.reset();
+    document.getElementById('finFecha').value = todayISO();
+    document.getElementById('finTipo').value = 'gasto';
+    updateCategoriaVisibility();
+    renderFinanzas();
+    renderInventario();
+  });
+
+  document.getElementById('finList').addEventListener('click', e => {
+    const editBtn = e.target.closest('[data-edit-fin]');
+    if (editBtn) {
+      const id = editBtn.getAttribute('data-edit-fin');
+      const item = finanzas.find(x => x.id === id);
+      if (item) {
+        document.getElementById('finFecha').value = item.fecha;
+        document.getElementById('finTipo').value = item.tipo;
+        updateCategoriaVisibility();
+        setCategoriaValue(item.tipo, item.categoria);
+        document.getElementById('finMonto').value = item.monto;
+        document.getElementById('finDescripcion').value = item.descripcion;
+        document.getElementById('finCantidadCts').value = item.cantidadCts || '';
+        document.getElementById('finCantidadPiedras').value = item.cantidadPiedras || '';
+        editingFinId = id;
+        document.getElementById('finForm').classList.remove('hidden');
+        document.getElementById('finFormChevron').textContent = '–';
+        document.querySelector('#finForm button[type=submit]').textContent = 'Actualizar';
+        document.getElementById('finForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    const delBtn = e.target.closest('[data-del-fin]');
+    if (delBtn) {
+      if (confirm('¿Eliminar este movimiento?')) {
+        finanzas = finanzas.filter(x => x.id !== delBtn.getAttribute('data-del-fin'));
+        saveFinanzas();
+        renderFinanzas();
+        renderInventario();
+      }
+    }
+  });
+
+  document.getElementById('finExportBtn').addEventListener('click', () => {
+    const headers = ['Fecha', 'Tipo', 'Categoria', 'Monto', 'Descripcion', 'CantidadCts', 'CantidadPiedras'];
+    const rows = finanzas.map(t => ({
+      Fecha: t.fecha, Tipo: t.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+      Categoria: t.categoria, Monto: t.monto, Descripcion: t.descripcion,
+      CantidadCts: t.cantidadCts || 0, CantidadPiedras: t.cantidadPiedras || 0
+    }));
+    downloadCSV(`finanzas_${todayISO()}.csv`, toCSV(headers, rows));
+  });
+
+  document.getElementById('finImportInput').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    readCSVFile(file, [
+      ['Fecha', 'Tipo', 'Categoria', 'Monto', 'Descripcion', 'CantidadCts', 'CantidadPiedras'],
+      ['Fecha', 'Tipo', 'Categoria', 'Monto', 'Descripcion']
+    ], (objs, mode) => {
+      const items = objs.map(o => ({
+        id: uid(),
+        fecha: o['fecha'] || todayISO(),
+        tipo: (o['tipo'] || '').toLowerCase().startsWith('ing') ? 'ingreso' : 'gasto',
+        categoria: o['categoria'] || 'Otro',
+        monto: parseFloat(o['monto']) || 0,
+        descripcion: o['descripcion'] || '',
+        cantidadCts: parseFloat(o['cantidadcts']) || 0,
+        cantidadPiedras: parseFloat(o['cantidadpiedras']) || 0
+      }));
+      finanzas = mode === 'replace' ? items : finanzas.concat(items);
+      saveFinanzas();
+      renderFinanzas();
+      renderInventario();
+      alert(`Se importaron ${items.length} movimiento(s).`);
+    });
+    e.target.value = '';
+  });
+
+  /* --- Formulario Inventario --- */
+  document.getElementById('invForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const nombre = document.getElementById('invNombre').value.trim();
+    const cantidad = parseFloat(document.getElementById('invCantidad').value) || 0;
+    const precio = parseFloat(document.getElementById('invPrecio').value) || 0;
+    const estado = document.getElementById('invEstado').value;
+    const notas = document.getElementById('invNotas').value.trim();
+    if (!nombre) return;
+
+    if (editingInvId) {
+      const item = inventario.find(x => x.id === editingInvId);
+      if (item) Object.assign(item, { nombre, cantidad, precio, estado, notas });
+      editingInvId = null;
+      this.querySelector('button[type=submit]').textContent = 'Guardar';
+    } else {
+      inventario.push({ id: uid(), nombre, cantidad, precio, estado, notas });
+    }
+    saveInventario();
+    this.reset();
+    renderInventario();
+  });
+
+  document.getElementById('invList').addEventListener('click', e => {
+    const sellBtn = e.target.closest('[data-sell-inv]');
+    if (sellBtn) {
+      openSellModal(sellBtn.getAttribute('data-sell-inv'));
+      return;
+    }
+    const editBtn = e.target.closest('[data-edit-inv]');
+    if (editBtn) {
+      const id = editBtn.getAttribute('data-edit-inv');
+      const item = inventario.find(x => x.id === id);
+      if (item) {
+        document.getElementById('invNombre').value = item.nombre;
+        document.getElementById('invCantidad').value = item.cantidad;
+        document.getElementById('invPrecio').value = item.precio;
+        document.getElementById('invEstado').value = item.estado;
+        document.getElementById('invNotas').value = item.notas;
+        editingInvId = id;
+        document.getElementById('invForm').classList.remove('hidden');
+        document.getElementById('invFormChevron').textContent = '–';
+        document.querySelector('#invForm button[type=submit]').textContent = 'Actualizar';
+        document.getElementById('invForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    const delBtn = e.target.closest('[data-del-inv]');
+    if (delBtn) {
+      if (confirm('¿Eliminar este producto?')) {
+        inventario = inventario.filter(x => x.id !== delBtn.getAttribute('data-del-inv'));
+        saveInventario();
+        renderInventario();
+      }
+    }
+  });
+
+  document.getElementById('invExportBtn').addEventListener('click', () => {
+    const headers = ['Nombre', 'Cantidad', 'PrecioUnitario', 'Estado', 'Notas'];
+    const rows = inventario.map(it => ({
+      Nombre: it.nombre, Cantidad: it.cantidad, PrecioUnitario: it.precio, Estado: it.estado, Notas: it.notas
+    }));
+    downloadCSV(`inventario_${todayISO()}.csv`, toCSV(headers, rows));
+  });
+
+  document.getElementById('invImportInput').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    readCSVFile(file, [['Nombre', 'Cantidad', 'PrecioUnitario', 'Estado', 'Notas']], (objs, mode) => {
+      const items = objs.map(o => ({
+        id: uid(),
+        nombre: o['nombre'] || 'Sin nombre',
+        cantidad: parseFloat(o['cantidad']) || 0,
+        precio: parseFloat(o['preciounitario']) || 0,
+        estado: ['Disponible', 'Bajo stock', 'Agotado', 'Vendido'].includes(o['estado']) ? o['estado'] : 'Disponible',
+        notas: o['notas'] || ''
+      }));
+      inventario = mode === 'replace' ? items : inventario.concat(items);
+      saveInventario();
+      renderInventario();
+      alert(`Se importaron ${items.length} producto(s).`);
+    });
+    e.target.value = '';
+  });
+
+  /* --- Formulario Tareas --- */
+  document.getElementById('tarForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const descripcion = document.getElementById('tarDescripcion').value.trim();
+    const prioridad = document.getElementById('tarPrioridad').value;
+    if (!descripcion) return;
+    tareas.push({ id: uid(), descripcion, prioridad, estado: 'Pendiente', fecha: todayISO() });
+    saveTareas();
+    this.reset();
+    document.getElementById('tarPrioridad').value = 'Media';
+    renderTareas();
+  });
+
+  document.getElementById('tarList').addEventListener('click', e => {
+    const t1 = e.target.closest('[data-toggle-tar]');
+    if (t1) {
+      const item = tareas.find(x => x.id === t1.getAttribute('data-toggle-tar'));
+      if (item) { item.estado = item.estado === 'Completada' ? 'Pendiente' : 'Completada'; saveTareas(); renderTareas(); }
+      return;
+    }
+    const t2 = e.target.closest('[data-cycle-prio]');
+    if (t2) {
+      const item = tareas.find(x => x.id === t2.getAttribute('data-cycle-prio'));
+      if (item) {
+        const order = ['Alta', 'Media', 'Baja'];
+        const idx = (order.indexOf(item.prioridad) + 1) % 3;
+        item.prioridad = order[idx];
+        saveTareas(); renderTareas();
+      }
+      return;
+    }
+    const t3 = e.target.closest('[data-del-tar]');
+    if (t3) {
+      if (confirm('¿Eliminar esta tarea?')) {
+        tareas = tareas.filter(x => x.id !== t3.getAttribute('data-del-tar'));
+        saveTareas(); renderTareas();
+      }
+    }
+  });
+
+  document.querySelectorAll('.tar-filtro-btn').forEach(b => b.addEventListener('click', () => {
+    currentTarFilter = b.dataset.filter;
+    document.querySelectorAll('.tar-filtro-btn').forEach(x => {
+      const active = x === b;
+      x.classList.toggle('bg-brand', active);
+      x.classList.toggle('text-white', active);
+      x.classList.toggle('bg-white', !active);
+      x.classList.toggle('text-gray-600', !active);
+      x.classList.toggle('border', !active);
+      x.classList.toggle('border-gray-200', !active);
+    });
+    renderTareas();
+  }));
+
+  document.getElementById('tarExportBtn').addEventListener('click', () => {
+    const headers = ['Descripcion', 'Prioridad', 'Estado', 'FechaCreacion'];
+    const rows = tareas.map(t => ({
+      Descripcion: t.descripcion, Prioridad: t.prioridad, Estado: t.estado, FechaCreacion: t.fecha
+    }));
+    downloadCSV(`tareas_${todayISO()}.csv`, toCSV(headers, rows));
+  });
+
+  document.getElementById('tarImportInput').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    readCSVFile(file, [['Descripcion', 'Prioridad', 'Estado', 'FechaCreacion']], (objs, mode) => {
+      const items = objs.map(o => {
+        const prio = capitalize(o['prioridad']);
+        const est = capitalize(o['estado']);
+        return {
+          id: uid(),
+          descripcion: o['descripcion'] || '',
+          prioridad: ['Alta', 'Media', 'Baja'].includes(prio) ? prio : 'Media',
+          estado: est === 'Completada' ? 'Completada' : 'Pendiente',
+          fecha: o['fechacreacion'] || todayISO()
+        };
+      });
+      tareas = mode === 'replace' ? items : tareas.concat(items);
+      saveTareas();
+      renderTareas();
+      alert(`Se importaron ${items.length} tarea(s).`);
+    });
+    e.target.value = '';
+  });
+
+  /* --- Modal de importación --- */
+  document.getElementById('btnImportAppend').addEventListener('click', () => {
+    if (pendingImportCallback) pendingImportCallback('append');
+    closeImportModal();
+  });
+  document.getElementById('btnImportReplace').addEventListener('click', () => {
+    if (pendingImportCallback) pendingImportCallback('replace');
+    closeImportModal();
+  });
+  document.getElementById('btnImportCancel').addEventListener('click', closeImportModal);
+
+  /* --- Modal de venta (Inventario -> Finanzas) --- */
+  document.getElementById('btnConfirmSell').addEventListener('click', () => {
+    if (!pendingSellItemId) return;
+    const item = inventario.find(x => x.id === pendingSellItemId);
+    if (!item) { closeSellModal(); return; }
+
+    let qty = parseFloat(document.getElementById('sellCantidad').value);
+    const total = parseFloat(document.getElementById('sellPrecioTotal').value);
+    if (!qty || qty <= 0) { alert('Ingresa una cantidad válida a vender.'); return; }
+    if (isNaN(total) || total < 0) { alert('Ingresa un precio de venta válido.'); return; }
+    qty = Math.min(qty, Number(item.cantidad) || 0);
+    const isFull = qty >= (Number(item.cantidad) || 0);
+
+    finanzas.push({
+      id: uid(), fecha: todayISO(), tipo: 'ingreso', categoria: 'Ventas',
+      monto: total,
+      descripcion: `Venta de ${item.nombre}${!isFull ? ` (${qty} u.)` : ''}`,
+      cantidadCts: 0, cantidadPiedras: 0,
+      origen: 'inventario', itemId: item.id
+    });
+
+    item.cantidad = (Number(item.cantidad) || 0) - qty;
+    if (item.cantidad <= 0) { item.cantidad = 0; item.estado = 'Vendido'; }
+
+    saveFinanzas();
+    saveInventario();
+    renderFinanzas();
+    renderInventario();
+    closeSellModal();
+    alert('Venta registrada. Se agregó como ingreso en Finanzas.');
+  });
+  document.getElementById('btnCancelSell').addEventListener('click', closeSellModal);
+}
+
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  finanzas = loadArray(K_FIN);
+  inventario = loadArray(K_INV);
+  tareas = loadArray(K_TAR);
+
+  document.getElementById('finFecha').value = todayISO();
+  document.getElementById('finMonthPicker').value = currentMonthStr();
+  updateCategoriaVisibility();
+
+  attachListeners();
+
+  renderFinanzas();
+  renderInventario();
+  renderTareas();
+
+  const lastTab = localStorage.getItem(K_TAB) || 'finanzas';
+  showTab(lastTab);
+});
+</script>
+</body>
+</html>
